@@ -1,120 +1,136 @@
-/*
-  FireWall
-  v1.0
-  16/05/2023
+/* 
+***************************
+   688 IAQ CALIBRATION
+***************************
+This needs to run continuously for at least 5 minutes in LP
+to start getting accurate IAQ and gas percentage measurements
+
+LP: Readings every 3 seconds
+ULP: Readings every 300 seconds (5 minutes)
 */
 
-#include <MKRWAN.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME680.h>
 #include <ArduinoLowPower.h>
-#include <bsec.h>
-#include "arduino_secrets.h"
+#include "bsec.h"
 
-String appEui = SECRET_APP_EUI;
-String appKey = SECRET_APP_KEY;
-
-LoRaModem modem;
+// Create an instance of the BME688 class with I2C address 0x77
 Adafruit_BME680 bme;
 
+#define BME688_ADDRESS 0x76
+
+// Helper functions declarations
+void checkIaqSensorStatus(void);
+void errLeds(void);
+
+// Create an object of the class Bsec
+Bsec iaqSensor;
+
+String output;
+
+// Entry point for the example
 void setup() {
-  Serial.begin(9600);
 
-  Wire.begin();
+  /* Initializes the Serial communication */
+  Serial.begin(115200);
+  delay(1000);
+  pinMode(LED_BUILTIN, OUTPUT);
+  iaqSensor.begin(BME68X_I2C_ADDR_LOW, Wire);
+  output = "\nBSEC library version " + String(iaqSensor.version.major) + "." + String(iaqSensor.version.minor) + "." + String(iaqSensor.version.major_bugfix) + "." + String(iaqSensor.version.minor_bugfix);
+  Serial.println(output);
 
-  if (!bme.begin(0x76)) {
-    Serial.println("Could not find a valid BME680 sensor, check wiring!");
-    while (1);
-  }
+  checkIaqSensorStatus();
 
-  bme.setTemperatureOversampling(BME680_OS_8X);
-  bme.setHumidityOversampling(BME680_OS_2X);
-  bme.setPressureOversampling(BME680_OS_4X);
-  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
-  bme.setGasHeater(320, 150); 
+  bsec_virtual_sensor_t sensorList[13] = {
+    BSEC_OUTPUT_IAQ,
+    BSEC_OUTPUT_STATIC_IAQ,
+    BSEC_OUTPUT_CO2_EQUIVALENT,
+    BSEC_OUTPUT_BREATH_VOC_EQUIVALENT,
+    BSEC_OUTPUT_RAW_TEMPERATURE,
+    BSEC_OUTPUT_RAW_PRESSURE,
+    BSEC_OUTPUT_RAW_HUMIDITY,
+    BSEC_OUTPUT_RAW_GAS,
+    BSEC_OUTPUT_STABILIZATION_STATUS,
+    BSEC_OUTPUT_RUN_IN_STATUS,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_TEMPERATURE,
+    BSEC_OUTPUT_SENSOR_HEAT_COMPENSATED_HUMIDITY,
+    BSEC_OUTPUT_GAS_PERCENTAGE
+  };
 
-  Serial.println("BME680 sensor initialized and calibrated.");
+  //iaqSensor.updateSubscription(sensorList, 13, BSEC_SAMPLE_RATE_ULP);
+  iaqSensor.updateSubscription(sensorList, 13, BSEC_SAMPLE_RATE_LP);
 
-  if (!modem.begin(EU868)) {
-    Serial.println("Failed to start module");
-    while (1) {}
-  }
+  checkIaqSensorStatus();
 
-  Serial.print("Your module version is: ");
-  Serial.println(modem.version());
-  Serial.print("Your device EUI is: ");
-  Serial.println(modem.deviceEUI());
-
-  int connected = modem.joinOTAA(appEui, appKey);
-  if (!connected) {
-    Serial.println("Something went wrong; are you indoor? Move near a window and retry");
-    while (1) {}
-  }
-
-  modem.setADR(true);
-  modem.minPollInterval(60);
+  // Print the header
+  output = "Timestamp [ms], IAQ, IAQ accuracy, Static IAQ, CO2 equivalent, breath VOC equivalent, raw temp[°C], pressure [hPa], raw relative humidity [%], gas [Ohm], Stab Status, run in status, comp temp[°C], comp humidity [%], gas percentage";
+  Serial.println(output);
 }
 
-void loop() {
-   // Take a reading from the BME680 sensor
-  if (!bme.performReading()) {
-    Serial.println("Failed to perform reading :(");
-    return;
-  }
+// Function that is looped forever
+void loop(void) {
+  unsigned long time_trigger = millis();
+  if (iaqSensor.run()) {  // If new data is available
+    digitalWrite(LED_BUILTIN, LOW);
+    output = String(time_trigger);
+    output += ", " + String(iaqSensor.iaq);
+    output += ", " + String(iaqSensor.iaqAccuracy);
+    output += ", " + String(iaqSensor.staticIaq);
+    output += ", " + String(iaqSensor.co2Equivalent);
+    output += ", " + String(iaqSensor.breathVocEquivalent);
+    output += ", " + String(iaqSensor.rawTemperature);
+    output += ", " + String(iaqSensor.pressure);
+    output += ", " + String(iaqSensor.rawHumidity);
+    output += ", " + String(iaqSensor.gasResistance);
+    output += ", " + String(iaqSensor.stabStatus);
+    output += ", " + String(iaqSensor.runInStatus);
+    output += ", " + String(iaqSensor.temperature);
+    output += ", " + String(iaqSensor.humidity);
+    output += ", " + String(
+      
+    );
+    Serial.println(output);
+    digitalWrite(LED_BUILTIN, HIGH);
 
-// Print the sensor readings to the console
-  Serial.print("Temperature = ");
-  Serial.print(bme.temperature);
-  Serial.println(" *C");
+    //Put deep sleep code here
 
-  Serial.print("Pressure = ");
-  Serial.print(bme.pressure / 100.0);
-  Serial.println(" hPa");
-
-  Serial.print("Humidity = ");
-  Serial.print(bme.humidity);
-  Serial.println(" %");
-
-  Serial.print("Gas Resistance = ");
-  Serial.print(bme.gas_resistance / 1000.0);
-  Serial.println(" KOhms");
-
-  Serial.println();
-
-  
-  //data.device_status = getDeviceStatus(); // replace with your function to get device status
-  //data.battery_health = getBatteryHealth(); // replace with your function to get battery health
-
-
-  int temperature = 100*bme.temperature;
-  int pressure = 10*(bme.pressure/100.0); 
-  int humidity = 100*bme.humidity;
-  int gas_resistance = 100*(bme.gas_resistance/1000.0);
-  
-  // Send LoRaWAN packet
-  byte payload[8];
-  payload[0] = highByte (temperature);
-  payload[1] = lowByte (temperature);
-  payload[2] = highByte (pressure);
-  payload[3] = lowByte (pressure);
-  payload[4] = highByte (humidity);
-  payload[5] = lowByte (humidity);
-  payload[6] = highByte (gas_resistance);
-  payload[7] = lowByte (gas_resistance);
- 
-  int err;
-  modem.beginPacket();
-  modem.write(payload, sizeof(payload));
-  err = modem.endPacket(true);
-
-  if (err > 0) {
-    Serial.println("LoRa Packet sent successfully!");
   } else {
-    Serial.println("Failed to send LoRa Packet :(");
+    checkIaqSensorStatus();
+  }
+}
+
+// Helper function definitions
+void checkIaqSensorStatus(void) {
+  if (iaqSensor.bsecStatus != BSEC_OK) {
+    if (iaqSensor.bsecStatus < BSEC_OK) {
+      output = "BSEC error code : " + String(iaqSensor.bsecStatus);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      output = "BSEC warning code : " + String(iaqSensor.bsecStatus);
+      Serial.println(output);
+    }
   }
 
-  // Sleep for 2 minutes to conserve battery life
-  //LowPower.deepSleep(2 * 60 * 1000);  // Sleep for 2 minutes
-  delay(20000);
+  if (iaqSensor.bme68xStatus != BME68X_OK) {
+    if (iaqSensor.bme68xStatus < BME68X_OK) {
+      output = "BME68X error code : " + String(iaqSensor.bme68xStatus);
+      Serial.println(output);
+      for (;;)
+        errLeds(); /* Halt in case of failure */
+    } else {
+      output = "BME68X warning code : " + String(iaqSensor.bme68xStatus);
+      Serial.println(output);
+    }
+  }
+}
+
+void errLeds(void) {
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(100);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(100);
 }
