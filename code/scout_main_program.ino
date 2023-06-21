@@ -15,9 +15,6 @@ ULP: Readings every 300 seconds (5 minutes)
 #include <ArduinoLowPower.h>
 #include "bsec.h"
 
-// Create an instance of the BME688 class with I2C address 0x77
-Adafruit_BME680 bme;
-
 #define BME688_ADDRESS 0x76
 
 // Helper functions declarations
@@ -33,7 +30,7 @@ String output;
 void setup() {
 
   /* Initializes the Serial communication */
-  Serial.begin(115200);
+  Serial.begin(9600);
   delay(1000);
   pinMode(LED_BUILTIN, OUTPUT);
   iaqSensor.begin(BME68X_I2C_ADDR_LOW, Wire);
@@ -87,9 +84,8 @@ void loop(void) {
     output += ", " + String(iaqSensor.runInStatus);
     output += ", " + String(iaqSensor.temperature);
     output += ", " + String(iaqSensor.humidity);
-    output += ", " + String(
-      
-    );
+    output += ", " + String();
+    
     Serial.println(output);
     digitalWrite(LED_BUILTIN, HIGH);
 
