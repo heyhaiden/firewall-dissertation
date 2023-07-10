@@ -2,7 +2,8 @@
 *****************************
 FIREWALL: SCOUT LITE
 SOLAR POWERED DEVICE
-V1
+V2
+10/07/2023
 *****************************
 
 */
@@ -18,7 +19,7 @@ V1
 // TTN Configuration
 //#include "ttn_config_secrets.h"
 //#include "ttn_config_secrets_2.h"
-#include "ttn_config_secrets_3.h"
+//include "ttn_config_secrets_3.h"
 
 String appEui = SECRET_APP_EUI;
 String appKey = SECRET_APP_KEY;
@@ -40,7 +41,6 @@ uint32_t DUTY_CYCLE = 2 * 60 * 1000;
 uint32_t SHORT_DUTY_CYCLE = 5 * 60 * 1000; 
 
 void setup() {
-  //pinMode(LED_BUILTIN, OUTPUT);
   
   Serial.begin(115200);
   delay(1000);
@@ -103,9 +103,8 @@ void loop() {
   //   LowPower.deepSleep(DUTY_CYCLE);  
   // }
 
-  //modem.sleep(DUTY_CYCLE);
-  //LowPower.sleep(DUTY_CYCLE); 
-  LowPower.deepSleep(DUTY_CYCLE);
+  modem.sleep(DUTY_CYCLE);
+  LowPower.sleep(DUTY_CYCLE);
   
 }
 
@@ -129,7 +128,7 @@ void initSensor() {
   }
 
   bme.setTemperatureOversampling(BME680_OS_8X);
-  bme.setHumidityOversampling(BME680_OS_4X);
+  bme.setHumidityOversampling(BME680_OS_8X);
   bme.setPressureOversampling(BME680_OS_4X);
   bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
   bme.setGasHeater(320, 150);
@@ -140,7 +139,7 @@ void initSensor() {
 void initLoRaWan() {
   int joinAttempts = 0;
   int maxJoinAttempts = 4;
-  uint32_t sleepPeriod = 60 * 60 * 1000;  // sleep for 60 minutes, in milliseconds
+  uint32_t sleepPeriod = 30 * 60 * 1000;  // sleep for 30 minutes, in milliseconds
 
   if (!modem.begin(EU868)) {
     Serial.println("Failed to start module");
@@ -225,23 +224,22 @@ void sendDataOverLoRaWAN() {
   int pressure = 10 * (bme.pressure / 100.0);
   int gas_resistance = bme.gas_resistance / 10.0;
 
-  // byte payload[11];
-  // payload[0] = highByte(temperature);
-  // payload[1] = lowByte(temperature);
-  // payload[2] = highByte(humidity);
-  // payload[3] = lowByte(humidity);
-  // payload[4] = highByte(pressure);
-  // payload[5] = lowByte(pressure);
-  // payload[6] = highByte(gas_resistance);
-  // payload[7] = lowByte(gas_resistance);
-  // payload[8] = (solar_status << 2) | battery_status;
-  // payload[9] = highByte(packetCount);
-  // payload[10] = lowByte(packetCount);
+  byte payload[11];
+  payload[0] = highByte(temperature);
+  payload[1] = lowByte(temperature);
+  payload[2] = highByte(humidity);
+  payload[3] = lowByte(humidity);
+  payload[4] = highByte(pressure);
+  payload[5] = lowByte(pressure);
+  payload[6] = highByte(gas_resistance);
+  payload[7] = lowByte(gas_resistance);
+  payload[8] = (battery_status << 2) | solar_status; // switched values to give priority to battery_status 3 states; values were getting incorrectly reported when solar was off and battery draining
+  payload[9] = highByte(packetCount);
+  payload[10] = lowByte(packetCount);
 
   int err;
   modem.beginPacket();
-  //modem.write(payload, sizeof(payload));
-  modem.print(temperature);
+  modem.write(payload, sizeof(payload));
   err = modem.endPacket(true);
 
   if (err > 0) {
