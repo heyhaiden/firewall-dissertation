@@ -2,8 +2,7 @@
 *****************************
 FIREWALL: SCOUT LITE
 SOLAR POWERED DEVICE
-V2
-10/07/2023
+V3
 *****************************
 
 */
@@ -19,7 +18,7 @@ V2
 // TTN Configuration
 //#include "ttn_config_secrets.h"
 //#include "ttn_config_secrets_2.h"
-//include "ttn_config_secrets_3.h"
+//#include "ttn_config_secrets_3.h"
 
 String appEui = SECRET_APP_EUI;
 String appKey = SECRET_APP_KEY;
@@ -37,8 +36,7 @@ SolarStatus solar_status;
 BatteryStatus battery_status;
 
 uint16_t packetCount = 0;
-uint32_t DUTY_CYCLE = 2 * 60 * 1000;
-uint32_t SHORT_DUTY_CYCLE = 5 * 60 * 1000; 
+uint32_t DUTY_CYCLE = 10 * 60 * 1000;
 
 void setup() {
   
@@ -50,68 +48,19 @@ void setup() {
 
   Wire.begin();
 
-  initIaqSensor();
   initLoRaWan();
-
-  //LowPower.attachInterruptWakeup(RTC_ALARM_WAKEUP, dummy, CHANGE);
+  initSensor();
+  
 }
 
 void loop() {
 
-  // Tell BME680 to begin measurement.
-  unsigned long endTime = bme.beginReading();
-  if (endTime == 0) {
-    //Serial.println(F("Failed to begin reading :("));
-    return;
-  }
-  //Serial.print(F("Reading started at "));
-  //Serial.print(millis());
-  //Serial.print(F(" and will finish at "));
-  //Serial.println(endTime);
+  readSensorAndSendData();
 
-   //Serial.println(F("You can do other work during BME680 measurement."));
-  //delay(50); // This represents parallel work.
-  // There's no need to delay() until millis() >= endTime: bme.endReading()
-  // takes care of that. It's okay for parallel work to take longer than
-  // BME680's measurement time.
+  handleDownlink();
 
-  // Obtain measurement results from BME680. Note that this operation isn't
-  // instantaneous even if milli() >= endTime due to I2C/SPI latency.
-  if (!bme.endReading()) {
-    //Serial.println(F("Failed to complete reading :("));
-    return;
-  }
-  //Serial.print(F("Reading completed at "));
-  //Serial.println(millis());
-
-  // if (!bme.performReading()) {
-  //   Serial.println("Failed to perform reading :(");
-  //   return;
-  // }
-
-  //bmeSensorRead();
-  updateDeviceHealth();
-  sendDataOverLoRaWAN();
-
-  // Before sleeping, check the temperature and adjust the sleep time
-  // if (bme.temperature >= 28.0) {
-  //   modem.sleep(SHORT_DUTY_CYCLE);
-  //   LowPower.deepSleep(SHORT_DUTY_CYCLE);
-    
-  // } else {
-  //   modem.sleep(DUTY_CYCLE);
-  //   LowPower.deepSleep(DUTY_CYCLE);  
-  // }
-
-  //modem.sleep(DUTY_CYCLE); // may be causing packet count to stay at 1 indefinitely
   LowPower.sleep(DUTY_CYCLE);
   
-}
-
-void dummy() {
-  // This function will be called once on device wakeup
-  // You can do some little operations here (like changing variables which will be used in the loop)
-  // Remember to avoid calling delay() and long running functions since this functions executes in interrupt context
 }
 
 void initSensor() {
@@ -168,8 +117,52 @@ void initLoRaWan() {
   delay(5000);  // wait 5 seconds to stabilize connection
 }
 
-void bmeSensorRead() {
-  // Print the sensor readings to the console
+void readSensorAndSendData() {
+  unsigned long endTime = bme.beginReading();
+  if (endTime == 0) {
+    Serial.println("Failed to begin reading");
+    return;
+  }
+
+  updateDeviceHealth();
+
+  if (!bme.endReading()) {
+    Serial.println("Failed to complete reading");
+    return;
+  }
+
+  sendDataOverLoRaWAN();
+}
+
+void handleDownlink() {
+  String receivedData;
+  int i = 0;
+  while (modem.available()) {
+    receivedData += (char)modem.read();
+    i++;
+  }
+
+  if (i == 0) {
+    Serial.println("No downlink data received");
+    return;
+  }
+
+  Serial.println("Received downlink data: " + receivedData);
+
+  // If the received data is the "EXTRA_MEASURE" command, take an extra measurement
+  if (receivedData == "EXTRA_MEASURE") {
+    Serial.println("Extra measurement command received. Taking extra measurement...");
+    readSensorAndSendData();
+  } else {
+    // If received data is a number, use it to set duty cycle
+    DUTY_CYCLE = receivedData.toInt() * 60 * 1000;  // convert minutes to milliseconds
+  }
+}
+
+
+void printSensorReading() {
+  Serial.println("***BME688***");
+
   Serial.print("Temperature = ");
   Serial.print(bme.temperature);
   Serial.println(" *C");
@@ -228,7 +221,7 @@ void sendDataOverLoRaWAN() {
   payload[5] = lowByte(pressure);
   payload[6] = highByte(gas_resistance);
   payload[7] = lowByte(gas_resistance);
-  payload[8] = (battery_status << 2) | solar_status; // switched values to give priority to battery_status 3 states; values were getting incorrectly reported when solar was off and battery draining
+  payload[8] = (battery_status << 2) | solar_status;
   payload[9] = highByte(packetCount);
   payload[10] = lowByte(packetCount);
 
