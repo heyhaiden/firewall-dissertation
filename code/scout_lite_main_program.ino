@@ -29,6 +29,9 @@ Adafruit_BME680 bme;
 #define PGOOD_PIN 1
 #define CHG_PIN 2
 
+#define SAMPLES 10
+#define SAMPLE_DELAY 100
+
 enum SolarStatus { OFF = 0, ACTIVE = 1 };
 enum BatteryStatus { CHARGING = 0, FULL = 1, DRAINING = 2 };
 
@@ -83,7 +86,7 @@ void initSensor() {
 void initLoRaWan() {
   int joinAttempts = 0;
   int maxJoinAttempts = 4;
-  uint32_t sleepPeriod = 30 * 60 * 1000;  // sleep for 30 minutes, in milliseconds
+  uint32_t sleepPeriod = 30 * 60 * 1000;  // sleep for 60 minutes, in milliseconds
 
   if (!modem.begin(EU868)) {
     Serial.println("Failed to start module");
@@ -154,13 +157,14 @@ void handleDownlink() {
     Serial.println("Extra measurement command received. Taking extra measurement...");
     readSensorAndSendData();
   } else {
-    // If received data is a number, use it to set duty cycle
+    // If the received data is a number, use it to set the duty cycle
     DUTY_CYCLE = receivedData.toInt() * 60 * 1000;  // convert minutes to milliseconds
   }
 }
 
 
 void printSensorReading() {
+  // Print the sensor readings to the console
   Serial.println("***BME688***");
 
   Serial.print("Temperature = ");
@@ -184,26 +188,42 @@ void printSensorReading() {
 
 void updateDeviceHealth() {
 
-  if (digitalRead(PGOOD_PIN) == LOW) {
-    solar_status = ACTIVE;
-    //Serial.println("Solar panel is ACTIVE.");
-  } else {
-    solar_status = OFF;
-    //Serial.println("Solar panel is OFF.");
+  int pgood_count = 0;
+  int chg_count = 0;
+
+  for (int i = 0; i < SAMPLES; i++) {
+    pgood_count += digitalRead(PGOOD_PIN) == LOW ? 1 : 0;
+    chg_count += digitalRead(CHG_PIN) == LOW ? 1 : 0;
+    delay(SAMPLE_DELAY);
   }
 
-  if (digitalRead(CHG_PIN) == LOW) {
+  if (pgood_count > SAMPLES / 2) {
+    solar_status = ACTIVE;
+    Serial.println("Solar panel is ACTIVE.");
+  } else {
+    solar_status = OFF;
+    Serial.println("Solar panel is OFF.");
+  }
+
+  if (chg_count > SAMPLES / 2) {
     battery_status = CHARGING;
-    //Serial.println("Battery is CHARGING.");
+    Serial.println("Battery is CHARGING.");
+    // If the battery is charging, but the solar panel is reported as off, 
+    // then the solar panel must actually be on. 
+    if (solar_status == OFF) {
+      solar_status = ACTIVE;
+      Serial.println("Correction: Solar panel is ACTIVE.");
+    }
   } else {
     if (solar_status == ACTIVE) {
       battery_status = FULL;
-      //Serial.println("Battery is FULL.");
+      Serial.println("Battery is FULL.");
     } else {
       battery_status = DRAINING;
-      //Serial.println("Battery is NOT CHARGING and solar is OFF, so battery status may not be FULL.");
+      Serial.println("Battery is DRAINING.");
     }
   }
+  Serial.println();
 }
 
 void sendDataOverLoRaWAN() {
