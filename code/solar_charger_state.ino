@@ -1,6 +1,6 @@
 /* 
 Solar Charger State Reader
-V2
+V3
 */
 
 #define PGOOD_PIN 1
@@ -55,6 +55,12 @@ void updateDeviceHealth() {
   if (chg_count > SAMPLES / 2) {
     battery_status = CHARGING;
     Serial.println("Battery is CHARGING.");
+    // If the battery is charging, but the solar panel is reported as off, 
+    // then the solar panel must actually be on. 
+    if (solar_status == OFF) {
+      solar_status = ACTIVE;
+      Serial.println("Correction: Solar panel is ACTIVE.");
+    }
   } else {
     if (solar_status == ACTIVE) {
       battery_status = FULL;
