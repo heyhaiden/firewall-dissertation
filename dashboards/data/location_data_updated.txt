@@ -1,6 +1,7 @@
-locations,name=Scout1 latitude=51.538528041817045,longitude=-0.009022404078401474
-locations,name=Scout2 latitude=52.628,longitude=0.4854134
-locations,name=Scout3 latitude=52.607717,longitude=0.48101
-locations,name=OPS-WST latitude=51.53857183473469,longitude=-0.008984682819348108
-locations,name=HereEast-WST latitude=51.5470829,longitude=-0.0234905
-locations,name=Downham-WST latitude=52.62838958796884,longitude=0.484511586273179
+name, latitude, longitude
+Scout1, 51.538528041817045, 0.00902240407840147
+Scout2, 52.628, 0.4854134
+Scout3, 52.607717, 0.48101
+OPS-WST, 51.53857183473469, -0.008984682819348108
+HereEast-WST, 51.5470829, -0.0234905
+Downham-WST, 52.62838958796884, 0.484511586273179
