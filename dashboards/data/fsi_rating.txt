@@ -1,0 +1,3 @@
+name, fsi_rating
+stratford, 4
+fincham, 3
