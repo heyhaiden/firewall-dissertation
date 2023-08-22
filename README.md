@@ -24,6 +24,7 @@ The Firewall Scout project is a research initiative aimed at enhancing environme
 ### Arduino Libraries
 - **BSEC Library:** Initially used for the BME688 sensor, this library from Bosch provides raw data readings and offers several power modes. However, due to compatibility issues, its use was discontinued.
 - **Adafruit Library:** This library was employed for the development of a low-power version of the Scout node.
+- **Arduino Low Power Library:** This library puts the microcontroller into deep sleep between duty cycles, drastically reducing power consumption during idle periods.
 
 ### Repository Contents
 - **Code:** Reproducible code for the Firewall Scout project.
