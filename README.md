@@ -1,5 +1,7 @@
 # Firewall Scout: Digital Defensible Space for Fire Severity Indexing
 
+![Name](dashboards/images/ScoutHeaderImage.png)
+
 ## Overview
 The Firewall Scout project is a research initiative aimed at enhancing environmental monitoring and fire risk management within the UK's urban-rural interface (URI). This project introduces the concept of a "digital defensible space" - a protective barrier formed by a network of sensors that continuously monitor and analyze environmental variables contributing to fire risk. The goal is to enable precise assessment of potential fire hazards by generating a higher fidelity Fire Severity Index (FSI), thereby strengthening preventive measures and enhancing community resilience.
 
