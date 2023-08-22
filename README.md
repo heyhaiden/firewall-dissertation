@@ -4,17 +4,11 @@
 The Firewall Scout project is a research initiative aimed at enhancing environmental monitoring and fire risk management within the UK's urban-rural interface (URI). This project introduces the concept of a "digital defensible space" - a protective barrier formed by a network of sensors that continuously monitor and analyze environmental variables contributing to fire risk. The goal is to enable precise assessment of potential fire hazards by generating a higher fidelity Fire Severity Index (FSI), thereby strengthening preventive measures and enhancing community resilience.
 
 ## Key Features
-- **LoRa Connection Regulation**
-  - Advanced LoRaWAN connection management with a smart retry mechanism.
-  - Energy-saving feature that puts the device in sleep mode if no connection is established.
+- **LoRa Connection Regulation:** Advanced LoRaWAN connection management with a smart retry mechanism to mitigate deployments on the edge of connectivity ranges. Energy-saving feature that puts the device in sleep mode if no connection is established.
 
-- **Device Health and Data Transmission**
-  - Comprehensive device health monitoring, including solar panel and battery status.
-  - Adherence to TTN’s Fair Use Policy, ensuring responsible data transmission.
+- **Device Health and Data Transmission:** Comprehensive device health monitoring, including solar panel and battery status.
 
-- **Downlink Messaging Control**
-  - Dynamic behavior adjustment based on received downlink messages.
-  - On-demand data collection feature for immediate response to changing conditions.
+- **Downlink Messaging Control:** Dynamic behavior adjustment based on received downlink messages, including on-demand data collection feature for immediate response to changing conditions.
 
 ## Research Objectives
 - Develop a low-cost sensing device to monitor environmental factors contributing to wildfire events.
