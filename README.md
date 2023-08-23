@@ -1,4 +1,4 @@
-# Firewall Scout: Digital Defensible Space for Fire Severity Indexing
+# Firewall Scout: Building a Digital Defensible Space for Fire Risk Monitoring
 
 ![Name](dashboards/images/ScoutHeaderImage.png)
 
