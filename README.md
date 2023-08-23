@@ -1,4 +1,4 @@
-# Firewall Scout: Building a Digital Defensible Space for Fire Risk Monitoring
+# Firewall Scout: Building a Digital Defensible Space with IoT
 
 ![Name](dashboards/images/ScoutHeaderImage.png)
 
