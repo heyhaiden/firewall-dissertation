@@ -38,6 +38,7 @@ The Firewall Scout project is a research initiative aimed at enhancing environme
 Three Scout nodes were deployed from July - August, 2023. Two were placed in Fincham, Norfolk County, and one was placed in Stratford in the Greater London area. They were programmed to send data packets over a ten-minute duty cycle via LoRa radio to The Things Network (TTN). Data was collected in an InfluxDB database, hosted on a Raspberry Pi. Dashboards were constructed within InfluxDB and Grafana for data interpretation and visualization.
 
 - **Grafana Snapshot:** [https://snapshots.raintank.io/dashboard/snapshot/0ffG73hmeVHJxysyXjeP0xVosTB2StvZ]
+- **Raw Dataset:** [https://drive.google.com/drive/folders/1qIohqHdbCPThrtIFe0_akVGIIpeAW5eb?usp=sharing]
 
 ## Conclusion
 The Firewall Scout project represents a step forward in the field of IoT-enabled environmental monitoring and fire risk management. By leveraging technology, this research aims to provide a more comprehensive and accurate assessment of fire risks, ultimately contributing to safer and more resilient communities.
