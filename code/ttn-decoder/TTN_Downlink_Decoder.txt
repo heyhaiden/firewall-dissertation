@@ -1,0 +1,16 @@
+function encodeDownlink(object) {
+    var payload = [];
+    if (object.command === "EXTRA_MEASURE") {
+        // Convert each character to its ASCII value
+        for (var i = 0; i < object.command.length; i++) {
+            payload.push(object.command.charCodeAt(i));
+        }
+    } else if (!isNaN(object.DUTY_CYCLE_MINUTES)) {
+        // Convert the number to a string and then to ASCII values
+        var dutyCycleStr = object.DUTY_CYCLE_MINUTES.toString();
+        for (var i = 0; i < dutyCycleStr.length; i++) {
+            payload.push(dutyCycleStr.charCodeAt(i));
+        }
+    }
+    return payload;
+}

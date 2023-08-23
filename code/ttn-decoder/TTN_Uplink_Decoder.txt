@@ -1,0 +1,55 @@
+function Decoder(bytes, port) {
+  var decoded = {};
+  
+  // Check if payload is an error message
+  if (bytes[0] === 255) {
+    decoded.error = String.fromCharCode.apply(null, bytes.slice(1));
+    return decoded;
+  }
+
+  // decode payload
+  var temperature = ((bytes[0] << 8) | bytes[1]) / 100.0;
+  var humidity = ((bytes[2] << 8) | bytes[3]) / 100.0;
+  var pressure = ((bytes[4] << 8) | bytes[5]) / 10.0;
+  var gas_resistance = ((bytes[6] << 8) | bytes[7]) / 100.0;
+  var statusBits = bytes[8];
+  var packetCount = (bytes[9] << 8) | bytes[10];
+
+  // determine solar status
+  var solarStatusValue = statusBits & 0b00000011;
+  var solar_status = "UNKNOWN";
+  switch(solarStatusValue){
+    case 0:
+      solar_status = "OFF";
+      break;
+    case 1:
+      solar_status = "ACTIVE";
+      break;
+  }
+
+  // determine battery status
+  var batteryStatusValue = (statusBits & 0b00001100) >> 2;
+  var battery_status = "UNKNOWN";
+  switch(batteryStatusValue){
+    case 0:
+      battery_status = "CHARGING";
+      break;
+    case 1:
+      battery_status = "FULL";
+      break;
+    case 2:
+      battery_status = "DRAINING";
+      break;
+  }
+
+  // populate object
+  decoded.temperature = Number(temperature.toFixed(2));
+  decoded.humidity = Number(humidity.toFixed(2));
+  decoded.pressure = Number(pressure.toFixed(2));
+  decoded.gas_resistance = Number(gas_resistance.toFixed(2));
+  decoded.solar_status = solar_status;
+  decoded.battery_status = battery_status;
+  decoded.packetCount = packetCount;
+
+  return decoded;
+}
